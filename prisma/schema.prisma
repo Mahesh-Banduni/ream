@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ReelStatus {
+  DRAFT
+  SCRIPT_GENERATED
+  REVIEWING
+  REVIEWED
+  STORYBOARD_GENERATED
+  IMAGES_GENERATING
+  VOICES_GENERATING
+  VIDEOS_GENERATING
+  RENDERING
+  COMPLETED
+  FAILED
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Reel {
+  id               String      @id @default(uuid())
+  title            String
+  audience         String
+  durationSeconds  Int
+  status           ReelStatus  @default(DRAFT)
+  hook             String?
+  ending           String?
+  body             String?
+  reviewScore      Float?
+  reviewApproved   Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  frames           ReelFrame[]
+  finalReel        FinalReel?
+  
+  @@map("reels")
+}
+
+model ReelFrame {
+  id                 String   @id @default(uuid())
+  reelId             String
+  reel               Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  orderId            Int
+  startTime          Float
+  endTime            Float
+  narration          String
+  visualDescription  String
+  imagePrompt        String
+  cameraShot         String
+  cameraMovement     String
+  transition         String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  voices             FrameVoice[]
+  images             FrameImage[]
+  videos             FrameVideo[]
+
+  @@unique([reelId, orderId])
+  @@index([reelId])
+  @@map("reel_frames")
+}
+
+model FrameVoice {
+  id                  String   @id @default(uuid())
+  frameId             String
+  frame               ReelFrame @relation(fields: [frameId], references: [id], onDelete: Cascade)
+  generationAttempt   Int       @default(1)
+  processingStatus    ProcessingStatus @default(PENDING)
+  language            String
+  audioUrl            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([frameId])
+  @@map("frame_voice")
+}
+
+model FrameImage {
+  id                  String   @id @default(uuid())
+  frameId             String
+  frame               ReelFrame @relation(fields: [frameId], references: [id], onDelete: Cascade)
+  generationAttempt   Int      @default(1)
+  processingStatus    ProcessingStatus @default(PENDING)
+  prompt              String
+  imageUrl            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([frameId])
+  @@map("frame_images")
+}
+
+model FrameVideo {
+  id                  String   @id @default(uuid())
+  frameId             String
+  frame               ReelFrame @relation(fields: [frameId], references: [id], onDelete: Cascade)
+  generationAttempt   Int      @default(1)
+  processingStatus    ProcessingStatus @default(PENDING)
+  prompt              String
+  videoUrl            String?
+  duration            Float?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([frameId])
+  @@map("frame_videos")
+}
+
+model FinalReel {
+  id                String   @id @default(uuid())
+  reelId            String   @unique
+  reel              Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  processingStatus  ProcessingStatus @default(PENDING)
+  videoUrl          String?
+  thumbnailUrl      String?
+  duration          Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("final_reels")
+}
