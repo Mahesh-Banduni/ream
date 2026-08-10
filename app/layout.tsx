@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { UserProvider } from "./UserProvider";
 
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -12,7 +13,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "REAM",
-  description: "Admin dashboard for managing reels and generated assets.",
+  description: "Real-time AI-powered short-form video content creation platform",
   icons: {
     icon: [{ url: "/favicon.ico" }],
   },
@@ -32,7 +33,9 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange={false}
         >
-          {children}
+          <UserProvider>
+            {children}
+          </UserProvider>
         </ThemeProvider>
       </body>
     </html>

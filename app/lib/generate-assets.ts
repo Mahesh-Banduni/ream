@@ -1,15 +1,12 @@
-import prisma from "./prisma";
-
-const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
+import generateFrameAudio from "./generate-frame-audio";
+import generateFrameImage from "./generate-frame-image";
 
 const API_DELAY = 500;
 import {
   Prisma,
   ProcessingStatus,
 } from "@prisma/client";
-
-const voiceRecords: Prisma.FrameVoiceCreateManyInput[] = [];
-const imageRecords: Prisma.FrameImageCreateManyInput[] = [];
+import prisma from "./prisma";
 
 interface WorkflowResult<T> {
   success: boolean;
@@ -70,75 +67,18 @@ async function executeWithRetry<T>({
 }
 
 // -----------------------------
-// API Calls
-// -----------------------------
-
-async function generateFrameAudio(frame: { id: string; [key: string]: unknown }) {
-  const res = await fetch(`${baseUrl}/api/assets/voice`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ frame }),
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to generate frame audio");
-  }
-
-  const data = await res.json();
-
-  const binary = atob(data.audio);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  const blob = new Blob([bytes], {
-    type: "audio/mpeg",
-  });
-
-  const file = new File([blob], `${frame.id}-voice.mp3`, {
-    type: "audio/mpeg",
-  });
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await fetch(`${baseUrl}/api/upload/voice`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to generate frame audio");
-  }
-
-  return response.json();
-}
-
-async function generateFrameImage(frame: object) {
-  const res = await fetch(`${baseUrl}/api/assets/image`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ frame }),
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to generate frame image");
-  }
-
-  return res.json();
-}
-
-// -----------------------------
 // Agent Workflow
 // -----------------------------
 
-export async function generateAssets(reelId: string) {
+export async function generateAssets(reelId: string, cookie?: string) {
+  const voiceRecords: Prisma.FrameVoiceCreateManyInput[] = [];
+  const imageRecords: Prisma.FrameImageCreateManyInput[] = [];
+  
+  const reel = await prisma.reel.findUnique({
+    where: { id: reelId },
+    select: { voice: true },
+  });
+
   const frames = await prisma.reelFrame.findMany({
     where: {
       reelId,
@@ -152,6 +92,7 @@ export async function generateAssets(reelId: string) {
     throw new Error("No frames found for the reel");
   }
 
+  const speaker = reel?.voice || "shubh";
   const results = [];
 
   for (const frame of frames) {
@@ -164,7 +105,7 @@ export async function generateAssets(reelId: string) {
     const audioResult = await executeWithRetry({
       maxRetries: 3,
       delayMs: 1000,
-      execute: () => generateFrameAudio(frame),
+      execute: () => generateFrameAudio(frame, speaker, cookie),
     });
 
     if (!audioResult.success) {
@@ -183,7 +124,7 @@ export async function generateAssets(reelId: string) {
     const imageResult = await executeWithRetry({
       maxRetries: 3,
       delayMs: 1000,
-      execute: () => generateFrameImage(frame),
+      execute: () => generateFrameImage(frame, cookie),
     });
 
     if (!imageResult.result.success) {
@@ -200,7 +141,8 @@ export async function generateAssets(reelId: string) {
       generationAttempt: audioResult.attempts,
       processingStatus: ProcessingStatus.COMPLETED,
       language: "en-IN",
-      audioUrl: audioResult.result.url
+      audioUrl: audioResult.result.url,
+      durationSeconds: audioResult.result.duration,
     });
 
     imageRecords.push({
@@ -211,8 +153,26 @@ export async function generateAssets(reelId: string) {
     });
   }
 
+  let currentTime = 0;
+
+  const frameUpdates = voiceRecords.map((voice) => {
+    const duration = voice.durationSeconds ?? 0;
+
+    const startTime = currentTime;
+    const endTime = startTime + duration;
+
+    currentTime = endTime;
+
+    return {
+      frameId: voice.frameId,
+      startTime,
+      endTime,
+    };
+  });
+
   return {
     voices: voiceRecords,
     images: imageRecords,
+    frameUpdates: frameUpdates
   };
 }

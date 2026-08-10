@@ -2,6 +2,7 @@ interface ReelScript {
   hook: string;
   body: string;
   ending: string;
+  bgMusic?: string;
 }
 
 interface GeneratedScriptResult {
@@ -58,6 +59,16 @@ const API_DELAY_MS = 500;
 
 const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+function buildAuthHeaders(cookie?: string) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (cookie) {
+    headers.cookie = cookie;
+  }
+  return headers;
+}
 
 async function generateWithReview<T>({
   generate,
@@ -120,19 +131,17 @@ async function generateWithReview<T>({
   };
 }
 
-export async function generateScript(reelId: string) {
+export async function generateScript(reelId: string, cookie?: string) {
   const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
 
   const result = await generateWithReview({
-    maxRetries: 1,
+    maxRetries: 2,
     minScore: 1.5,
 
     generate: async (feedback?: string) => {
-      const res = await fetch(`${baseUrl}/api/script/primary`, {
+      const res = await fetch(`${baseUrl}/api/client/script/primary`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: buildAuthHeaders(cookie),
         body: JSON.stringify({
           reelId,
           feedback,
@@ -149,11 +158,9 @@ export async function generateScript(reelId: string) {
     },
 
     review: async (script) => {
-      const res = await fetch(`${baseUrl}/api/script/review`, {
+      const res = await fetch(`${baseUrl}/api/client/script/review`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: buildAuthHeaders(cookie),
         body: JSON.stringify({
           reelId,
           script,
@@ -184,12 +191,13 @@ export async function generateScript(reelId: string) {
       result.review?.feedback ?? "Unable to generate a satisfactory script."
     );
   }
-
+  
   return {
     script: {
       hook: result.result!.hook,
       body: result.result!.body,
       ending: result.result!.ending,
+      bgMusic: result.result!.bgMusic,
     },
     framePlan: result.result!.framePlan,
     estimatedDuration: result.result!.estimatedDuration,

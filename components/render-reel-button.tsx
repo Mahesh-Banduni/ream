@@ -24,7 +24,7 @@ export function RenderReelButton({ reelId, className }: RenderReelButtonProps) {
     setErrorMessage(null);
 
     try {
-      const res = await fetch(`/api/reels/${reelId}/render`, {
+      const res = await fetch(`/api/client/reels/${reelId}/render`, {
         method: "POST",
       });
 
@@ -53,7 +53,7 @@ export function RenderReelButton({ reelId, className }: RenderReelButtonProps) {
         onClick={handleRender}
         disabled={state === "loading" || state === "success"}
         className={cn(
-          "flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.97]",
+          "cursor-pointer flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.97]",
           state === "idle" &&
             "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md",
           state === "loading" &&

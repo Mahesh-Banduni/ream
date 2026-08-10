@@ -109,7 +109,7 @@ export function ReelCard({ reel }: ReelCardProps) {
           <div className="absolute inset-0 flex items-center justify-center">
             <button
               onClick={() => setModalOpen(true)}
-              className="flex size-16 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md border border-white/20 shadow-lg opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-110 active:scale-95 hover:bg-white/25"
+              className="cursor-pointer flex size-16 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md border border-white/20 shadow-lg opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-110 active:scale-95 hover:bg-white/25"
               aria-label="Play reel video"
             >
               <Play className="size-7 fill-current ml-1" />
@@ -122,7 +122,7 @@ export function ReelCard({ reel }: ReelCardProps) {
 
           {/* Title */}
           <div>
-            <Link title="View or edit reel details" href={`/admin/reels/${reel.id}`} className="text-sm font-bold text-white leading-snug line-clamp-2 hover:text-primary">
+            <Link title="View or edit reel details" href={`/client/dashboard/reels/${reel.id}`} className="text-sm font-bold text-white leading-snug line-clamp-2 hover:text-primary">
               {reel.title}
             </Link>
           </div>
@@ -145,7 +145,7 @@ export function ReelCard({ reel }: ReelCardProps) {
             )}
 
             <Link
-              href={`/admin/reels/${reel.id}`}
+              href={`/client/dashboard/reels/${reel.id}`}
               className="flex items-center justify-center gap-1.5 rounded-xl bg-white/15 px-3 py-2.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.97]"
               title="View or edit reel details"
             >
@@ -342,7 +342,7 @@ function VideoModal({
         <button
           onClick={onClose}
           className={cn(
-            "absolute top-4 right-4 flex size-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/10 transition hover:bg-black/80 hover:scale-105 z-10",
+            "cursor-pointer absolute top-4 right-4 flex size-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/10 transition hover:bg-black/80 hover:scale-105 z-10",
             controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
           )}
         >
@@ -402,7 +402,7 @@ function VideoModal({
           <div className="flex items-center justify-between text-white">
             <div className="flex items-center gap-3">
               {/* Play/Pause */}
-              <button onClick={togglePlay} className="hover:text-primary transition p-1">
+              <button onClick={togglePlay} className="cursor-pointer hover:text-primary transition p-1">
                 {isPlaying ? (
                   <Pause className="size-5 fill-current" />
                 ) : (
@@ -412,7 +412,7 @@ function VideoModal({
 
               {/* Mute + Volume */}
               <div className="flex items-center gap-2">
-                <button onClick={toggleMute} className="hover:text-primary transition p-1">
+                <button onClick={toggleMute} className="cursor-pointer hover:text-primary transition p-1">
                   {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
                 </button>
                 <input
@@ -448,7 +448,7 @@ function VideoModal({
               </a>
 
               {/* Fullscreen */}
-              <button onClick={toggleFullscreen} className="hover:text-primary transition p-1">
+              <button onClick={toggleFullscreen} className="cursor-pointer hover:text-primary transition p-1">
                 {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
               </button>
             </div>
