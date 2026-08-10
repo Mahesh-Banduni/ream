@@ -58,21 +58,27 @@ export default function () {
     return;
   }
 
-  const csrfToken = csrfResponse.json('csrfToken');
+  const csrfToken = csrfResponse.json('csrfToken') as string | null;
+  if (!csrfToken) {
+    sleep(30);
+    return;
+  }
 
   // --------------------------------------------------
   // 2. Login
   // --------------------------------------------------
 
+  const loginBody = new URLSearchParams();
+  loginBody.append('csrfToken', csrfToken);
+  loginBody.append('email', TEST_EMAIL);
+  loginBody.append('password', TEST_PASSWORD);
+  loginBody.append('json', 'true');
+
   const loginResponse = http.post(
     `${BASE_URL}/api/auth/callback/credentials`,
+    loginBody.toString(),
     {
-      csrfToken,
-      email: TEST_EMAIL,
-      password: TEST_PASSWORD,
-      json: 'true',
-    },
-    {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       redirects: 0,
       tags: { endpoint: 'login' },
     }

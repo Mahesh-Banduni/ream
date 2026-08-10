@@ -1,5 +1,5 @@
 type UploadOptions = {
-  file: Buffer;
+  file: Buffer | Uint8Array;
   fileName: string;
   folder?: string;
 };
@@ -26,7 +26,8 @@ function getPrivateKey() {
 
 async function upload(options: UploadOptions): Promise<ImageKitUploadResult> {
   const formData = new FormData();
-  formData.append("file", new Blob([options.file]), options.fileName);
+  const uint8 = new Uint8Array(options.file);
+  formData.append("file", new Blob([uint8]), options.fileName);
   formData.append("fileName", options.fileName);
 
   if (options.folder) {

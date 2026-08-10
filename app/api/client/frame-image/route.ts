@@ -1,6 +1,7 @@
 import prisma from "@/app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { checkUserRole } from "@/app/lib/check-role";
+import { Prisma } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.frameImage.deleteMany({
         where: {
           frame: {
@@ -102,7 +103,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const frameImage = await prisma.$transaction(async (tx) => {
+    const frameImage = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.frameImage.deleteMany({
         where: { frameId },
       });
