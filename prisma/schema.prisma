@@ -27,8 +27,15 @@ enum ProcessingStatus {
   FAILED
 }
 
+enum Source {
+  GOOGLE
+  EMAIL
+}
+
 model Reel {
   id               String      @id @default(uuid())
+  clientId         String
+  client           Client       @relation(fields: [clientId], references: [client_id])
   title            String
   audience         String
   durationSeconds  Int
@@ -37,11 +44,16 @@ model Reel {
   ending           String?
   body             String?
   reviewScore      Float?
+  tone             String?   
+  keywords         String[]
+  voice            String?
+  musicEnabled     Boolean      @default(true)
   reviewApproved   Boolean      @default(false)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   frames           ReelFrame[]
   finalReel        FinalReel?
+  backgroundMusic  ReelBackgroundMusic?
   
   @@map("reels")
 }
@@ -70,11 +82,25 @@ model ReelFrame {
   @@map("reel_frames")
 }
 
+model ReelBackgroundMusic {
+  musicId         String @id @default(uuid())
+  reelId          String           @unique
+  reel            Reel             @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  style_description           String
+  musicUrl        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([reelId])
+  @@map("reel_background_music")
+}
+
 model FrameVoice {
   id                  String   @id @default(uuid())
   frameId             String
   frame               ReelFrame @relation(fields: [frameId], references: [id], onDelete: Cascade)
   generationAttempt   Int       @default(1)
+  durationSeconds     Float?
   processingStatus    ProcessingStatus @default(PENDING)
   language            String
   audioUrl            String?
@@ -128,4 +154,43 @@ model FinalReel {
   updatedAt         DateTime @updatedAt
 
   @@map("final_reels")
+}
+
+model Role {
+  role_id    Int      @id @default(autoincrement())
+  role_name  String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  users      User[]
+}
+
+model User {
+  user_id                   String                   @id @default(uuid())
+  name                      String
+  email                     String                   @unique
+  phone                     String?                   @unique
+  password_hash             String?
+  google_id                 String?
+  auth_provider             Source                   @default(EMAIL)
+  role_id                   Int
+  is_active                 Boolean                  @default(true)
+  created_at                DateTime                 @default(now())
+  updated_at                DateTime                 @updatedAt
+  otp                       Int?
+  otpExpiry                 DateTime?
+  client                    Client?
+  role                      Role                     @relation(fields: [role_id], references: [role_id])
+}
+
+model Client {
+  client_id  String                   @id @default(uuid())
+  name             String
+  email            String?
+  phone            String?                   @unique
+  is_active        Boolean                  @default(true)
+  created_at       DateTime                 @default(now())
+  updated_at       DateTime                 @updatedAt
+
+  user             User                     @relation(fields: [client_id], references: [user_id])
+  reels            Reel[]
 }

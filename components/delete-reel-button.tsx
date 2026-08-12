@@ -26,7 +26,7 @@ export function DeleteReelButton({ reelId }: { reelId: string }) {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/reels/${reelId}`, {
+      const response = await fetch(`/api/client/reels/${reelId}`, {
         method: "DELETE",
       });
 
@@ -39,7 +39,7 @@ export function DeleteReelButton({ reelId }: { reelId: string }) {
       }
 
       router.refresh();
-      router.push("/admin/reels");
+      router.push("/client/dashboard/reels");
     } catch (error) {
       console.error(error);
       window.alert("An unexpected error occurred.");
@@ -49,7 +49,7 @@ export function DeleteReelButton({ reelId }: { reelId: string }) {
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+    <AlertDialog open={isOpen} onOpenChange={()=>setIsOpen(!isOpen)}>
       <AlertDialogTrigger
         render={
           <Button

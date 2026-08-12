@@ -28,7 +28,6 @@ export async function searchPixabay(query: string) {
         `${API}?key=${process.env.PIXABAY_API_KEY}`+`&q=${encodeURIComponent(query)}`+"&image_type=photo" +"&per_page=3";
 
     const res = await fetch(url);
-    console.log("Url: ",url);
 
     if (!res.ok) {
         console.error(res.status, await res.text());
@@ -36,7 +35,6 @@ export async function searchPixabay(query: string) {
     }
 
     const data = await res.json();
-    console.log("Data: ",data)
 
     return data.hits.map((img: any) => ({
         id: img.id,
@@ -88,7 +86,9 @@ export async function findImage(query: string) {
     if (images.length > 0) {
         return {
             source: "UNSPLASH",
-            image: images[0],
+            image: images[
+              Math.floor(Math.random() * images.length)
+            ],
         };
     }
 
@@ -98,7 +98,9 @@ export async function findImage(query: string) {
     if (images.length > 0) {
         return {
             source: "PIXABAY",
-            image: images[0],
+            image:  images[
+              Math.floor(Math.random() * images.length)
+            ],
         };
     }
 

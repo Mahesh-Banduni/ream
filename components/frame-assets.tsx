@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Play, 
   Pause, 
@@ -170,13 +171,6 @@ function ImageCard({ image }: { image: FrameImage }) {
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-between p-3">
           <div className="flex justify-end gap-2">
-            <button 
-              onClick={handleCopyPrompt}
-              className="rounded-lg bg-black/60 p-1.5 text-white backdrop-blur-sm transition hover:bg-black/80"
-              title="Copy Prompt"
-            >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-            </button>
             <div className="rounded-lg bg-black/60 p-1.5 text-white backdrop-blur-sm transition hover:bg-black/80">
               <ZoomIn className="h-3.5 w-3.5" />
             </div>
@@ -187,10 +181,11 @@ function ImageCard({ image }: { image: FrameImage }) {
         </div>
       </div>
 
-      {/* Lightbox Modal */}
-      {lightboxOpen && (
+      {/* Lightbox Modal — rendered via portal directly on document.body to escape
+          any ancestor stacking context (overflow-x-hidden on <main>, sticky header, etc.) */}
+      {lightboxOpen && typeof document !== "undefined" && createPortal(
         <div 
-          className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/10 p-4 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/10 p-4 backdrop-blur-sm animate-fade-in"
           onClick={() => setLightboxOpen(false)}
         >
           <div 
@@ -199,7 +194,7 @@ function ImageCard({ image }: { image: FrameImage }) {
           >
             <button 
               onClick={() => setLightboxOpen(false)}
-              className="absolute top-4 right-4 rounded-full bg-zinc-900 border border-zinc-800 p-2 text-zinc-400 hover:text-white transition"
+              className="cursor-pointer absolute top-4 right-4 rounded-full bg-zinc-900 border border-zinc-800 p-2 text-zinc-400 hover:text-white transition"
             >
               <X className="h-5 w-5" />
             </button>
@@ -219,7 +214,7 @@ function ImageCard({ image }: { image: FrameImage }) {
                 <div className="flex gap-2">
                   <button 
                     onClick={handleCopyPrompt}
-                    className="flex items-center gap-1 text-xs text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg transition"
+                    className="cursor-pointer flex items-center gap-1 text-xs text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg transition"
                   >
                     {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                     {copied ? "Copied" : "Copy Prompt"}
@@ -241,7 +236,8 @@ function ImageCard({ image }: { image: FrameImage }) {
               </p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
@@ -380,7 +376,7 @@ function AudioPlayerCard({ voice }: { voice: FrameVoice }) {
         {/* Play/Pause Button */}
         <button 
           onClick={togglePlay}
-          className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:scale-105 active:scale-95 transition"
+          className="cursor-pointer flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:scale-105 active:scale-95 transition"
         >
           {isPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
         </button>
@@ -422,7 +418,7 @@ function AudioPlayerCard({ voice }: { voice: FrameVoice }) {
         {/* Mute Button */}
         <button 
           onClick={toggleMute}
-          className="text-muted-foreground hover:text-foreground transition p-1"
+          className="cursor-pointer text-muted-foreground hover:text-foreground transition p-1"
         >
           {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </button>
@@ -655,7 +651,7 @@ function VideoPlayerCard({ video }: { video: FrameVideo }) {
               {/* Play Button */}
               <button 
                 onClick={togglePlay}
-                className="hover:text-primary transition p-1"
+                className="cursor-pointer hover:text-primary transition p-1"
               >
                 {isPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
               </button>
@@ -663,7 +659,7 @@ function VideoPlayerCard({ video }: { video: FrameVideo }) {
               {/* Mute Button */}
               <button 
                 onClick={toggleMute}
-                className="hover:text-primary transition p-1"
+                className="cursor-pointer hover:text-primary transition p-1"
               >
                 {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </button>
@@ -681,7 +677,7 @@ function VideoPlayerCard({ video }: { video: FrameVideo }) {
               {/* Fullscreen Button */}
               <button 
                 onClick={toggleFullscreen}
-                className="hover:text-primary transition p-1"
+                className="cursor-pointer hover:text-primary transition p-1"
               >
                 {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
               </button>

@@ -16,8 +16,9 @@ const defaultProps: ReelCompositionProps = {
       audioUrl: null,
       narration: "Preview narration for frame 1",
       startTime: 0,
+      cameraMovement: 'Static',
       endTime: 5,
-      transition: "crossfade",
+      transition: "Fade",
     },
     {
       id: "preview-frame-2",
@@ -26,9 +27,10 @@ const defaultProps: ReelCompositionProps = {
         "https://images.unsplash.com/photo-1682695796954-bad0d0f59ff1?w=1080",
       audioUrl: null,
       narration: "Preview narration for frame 2",
+      cameraMovement: 'Static',
       startTime: 5,
       endTime: 10,
-      transition: "crossfade",
+      transition: "Fade",
     },
   ],
 };

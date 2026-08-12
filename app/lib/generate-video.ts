@@ -3,17 +3,25 @@ import os from "os";
 import fs from "fs";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
+import imagekit from "@/app/lib/imagekit";
 import prisma from "./prisma";
 import type { ReelCompositionProps, ReelFrameInput } from "@/remotion/ReelComposition";
 
-const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
 const FPS = 30;
 
 // ─────────────────────────────────────────────
 // Main entry-point called by the render API route
 // ─────────────────────────────────────────────
-export async function generateVideo(reelId: string): Promise<string> {
-  // 1. Load reel frames + assets from DB
+export async function generateVideo(
+  reelId: string,
+  clientId: string
+): Promise<string> {
+  // 1. Load reel and frames + assets from DB
+  const reel = await prisma.reel.findUnique({
+    where: { id: reelId },
+    include: { backgroundMusic: true },
+  });
+
   const frames = await prisma.reelFrame.findMany({
     where: { reelId },
     orderBy: { orderId: "asc" },
@@ -54,7 +62,8 @@ export async function generateVideo(reelId: string): Promise<string> {
       narration: frame.narration,
       startTime: frame.startTime,
       endTime: frame.endTime,
-      transition: frame.transition ?? "crossfade",
+      cameraMovement: (frame.cameraMovement as ReelFrameInput["cameraMovement"]) || "Static",
+      transition: (frame.transition as ReelFrameInput["transition"]) || "Cut",
     };
   });
 
@@ -64,7 +73,15 @@ export async function generateVideo(reelId: string): Promise<string> {
   );
   const durationInFrames = Math.max(1, Math.round(totalDurationSec * FPS));
 
-  const inputProps: ReelCompositionProps = { frames: compositionFrames };
+  const bgMusicUrl =
+    reel?.musicEnabled && reel?.backgroundMusic?.musicUrl
+      ? reel.backgroundMusic.musicUrl
+      : null;
+
+  const inputProps: ReelCompositionProps = {
+    frames: compositionFrames,
+    bgMusicUrl,
+  };
 
   // 3. Bundle the Remotion composition
   console.log("[generate-video] Bundling Remotion composition…");
@@ -103,25 +120,13 @@ export async function generateVideo(reelId: string): Promise<string> {
 
   console.log("[generate-video] Render complete. Uploading to ImageKit…");
 
-  // 6. Upload the rendered MP4 to ImageKit via the existing /api/upload/video route
+  // 6. Upload the rendered MP4 directly to ImageKit to avoid Next.js body buffering limits
   const fileBuffer = fs.readFileSync(tmpFile);
-  const blob = new Blob([fileBuffer], { type: "video/mp4" });
-  const file = new File([blob], `reel-${reelId}.mp4`, { type: "video/mp4" });
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const uploadRes = await fetch(`${baseUrl}/api/upload/video`, {
-    method: "POST",
-    body: formData,
+  const uploadResult = await imagekit.upload({
+    file: fileBuffer,
+    fileName: `reel-${reelId}.mp4`,
+    folder: `${process.env.IMAGEKIT_FOLDER}/videos`,
   });
-
-  if (!uploadRes.ok) {
-    const err = await uploadRes.text();
-    throw new Error(`ImageKit upload failed: ${err}`);
-  }
-
-  const uploadResult = await uploadRes.json();
   const videoUrl: string = uploadResult.url;
 
   console.log(`[generate-video] Uploaded: ${videoUrl}`);

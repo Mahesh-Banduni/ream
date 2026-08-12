@@ -2,6 +2,9 @@ interface ReelInput {
   title: string;
   audience: string;
   durationSeconds: number;
+  tone?: string;
+  keywords?: string[];
+  voice?: string;
 }
 
 export function useReel() {
@@ -9,7 +12,7 @@ export function useReel() {
 
   const createReel = async (data: ReelInput) => {
     try {
-      const response = await fetch(`${baseUrl}/api/reels`, {
+      const response = await fetch(`${baseUrl}/api/client/reels`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -18,6 +21,9 @@ export function useReel() {
           title: data.title,
           audience: data.audience,
           durationSeconds: data.durationSeconds,
+          tone: data.tone,
+          keywords: data.keywords,
+          voice: data.voice,
         }),
       });
 
@@ -38,7 +44,7 @@ export function useReel() {
   const generateReelScript = async (reelId: string) => {
     try {
       const response = await fetch(
-        `${baseUrl}/api/reels/${reelId}/generate-script`,
+        `${baseUrl}/api/client/reels/${reelId}/generate-script`,
         {
           method: "POST",
           headers: {
@@ -47,13 +53,15 @@ export function useReel() {
         }
       );
 
+      console.log("Response from generate-script:", response);
+
       if (!response.ok) {
         throw new Error("Failed to generate script");
       }
 
       const scriptResponse = await response.json();
 
-      const res = await fetch(`${baseUrl}/api/reels/${reelId}`, {
+      const res = await fetch(`${baseUrl}/api/client/reels/${reelId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -65,7 +73,7 @@ export function useReel() {
         throw new Error("Failed to update reel with generated script");
       }
 
-      const response2 = await fetch(`${baseUrl}/api/reelframe`, {
+      const response2 = await fetch(`${baseUrl}/api/client/reel-frame`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -89,10 +97,49 @@ export function useReel() {
     }
   };
 
+  const generateReelBackgroundMusic = async (reelId: string) => {
+    try {
+      const response = await fetch(
+        `${baseUrl}/api/client/reels/${reelId}/generate-bg-music`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate background music");
+      }
+
+      const musicResponse = await response.json();
+
+      const res = await fetch(`${baseUrl}/api/client/reel-bg-music`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({musicResponse, reelId}),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save background music details");
+      }
+
+      return await res.json();
+    } catch (error) {
+      console.error("generateReelBackgroundMusic error:", error);
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to generate background music.");
+    }
+  }
+
   const generateFrameAssets = async (reelId: string) => {
     try {
       const res = await fetch(
-        `${baseUrl}/api/reels/${reelId}/generate-assets`,
+        `${baseUrl}/api/client/reels/${reelId}/generate-assets`,
         {
           method: "POST",
           headers: {
@@ -107,13 +154,14 @@ export function useReel() {
 
       const assetsData = await res.json();
 
-      const response1 = await fetch(`${baseUrl}/api/framevoice`, {
+      const response1 = await fetch(`${baseUrl}/api/client/frame-voice`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           voices: assetsData.voices,
+          frameUpdates: assetsData.frameUpdates,
           reelId,
         }),
       });
@@ -122,7 +170,7 @@ export function useReel() {
         throw new Error("Failed to create frame voices");
       }
 
-      const response2 = await fetch(`${baseUrl}/api/frameimage`, {
+      const response2 = await fetch(`${baseUrl}/api/client/frame-image`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -149,6 +197,7 @@ export function useReel() {
   return {
     createReel,
     generateReelScript,
+    generateReelBackgroundMusic,
     generateFrameAssets,
   };
 }
